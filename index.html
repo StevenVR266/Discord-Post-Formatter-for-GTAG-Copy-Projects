@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unity Hub Post Generator</title>
+    <style>
+        :root {
+            --bg-base: #313338;
+            --bg-panel: #2b2d31;
+            --bg-input: #1e1f22;
+            --text-normal: #dbdee1;
+            --text-muted: #b5bac1;
+            --blurple: #5865f2;
+            --blurple-hover: #4752c4;
+            --success: #23a559;
+            --success-hover: #1e8f4c;
+            --danger: #da373c;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-normal);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            max-width: 1100px;
+            width: 100%;
+        }
+
+        .panel {
+            background-color: var(--bg-panel);
+            padding: 28px;
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--bg-input);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+        }
+
+        .header-flex h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        label {
+            font-weight: bold;
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            display: block;
+            margin-top: 14px;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        input[type="text"], 
+        input[type="url"], 
+        select, 
+        textarea {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--bg-input);
+            border: 1px solid transparent;
+            color: white;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: inherit;
+            font-size: 14px;
+            transition: border 0.2s ease;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border: 1px solid var(--blurple);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        textarea.code-output {
+            font-family: Consolas, 'Courier New', monospace;
+            min-height: 260px;
+            white-space: pre-wrap;
+            background-color: #111214;
+            color: #b5bac1;
+            flex-grow: 1;
+        }
+
+        .btn {
+            display: inline-block;
+            width: 100%;
+            padding: 12px;
+            background-color: var(--blurple);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+            font-size: 14px;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+
+        .btn:hover { background-color: var(--blurple-hover); }
+        .btn:active { transform: scale(0.98); }
+        .btn.copied { background-color: var(--success); }
+        .btn.copied:hover { background-color: var(--success-hover); }
+
+        .clear-btn {
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        .clear-btn:hover { text-decoration: underline; }
+
+        @media (max-width: 768px) {
+            .container { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- LEFT PANEL: INPUT FORM -->
+        <div class="panel">
+            <div class="header-flex">
+                <h2>✏️ Post Details</h2>
+                <button class="clear-btn" onclick="clearForm()">Clear All</button>
+            </div>
+
+            <label>Target Channel / Post Type</label>
+            <select id="input-type">
+                <option value="📁┃">📁 Unity Project (#post-projects)</option>
+                <option value="📦┃">📦 Unity Package (#post-packages)</option>
+                <option value="📄┃">📄 C# Script (#post-scripts)</option>
+                <option value="🗳️┃">🗳️ Shader (#post-shaders)</option>
+                <option value="📰┃">📰 PlayFab DLC Catalog (#dlcs)</option>
+                <option value="📝┃">📝 PlayFab Revision / CloudScript (#revisions)</option>
+                <option value="🔧┃">🔧 Bug Fix (#fixes)</option>
+            </select>
+
+            <label>Title / Resource Name</label>
+            <input type="text" id="input-name" placeholder="e.g. Beach Release 2023" value="Beach Release 2023">
+
+            <label>Features / Contents (One per line)</label>
+            <textarea id="input-features" placeholder="Working Lobbies&#10;Custom Cosmetics">Working Lobbies&#10;Custom Cosmetics</textarea>
+
+            <label>Download Link</label>
+            <input type="url" id="input-download" placeholder="https://mega.nz/..." value="https://mega.nz/file/...">
+
+            <label>VirusTotal Link (Optional)</label>
+            <input type="url" id="input-virustotal" placeholder="https://virustotal.com/gui/file/...">
+
+            <label>Credits</label>
+            <input type="text" id="input-credits" placeholder="e.g. Steven / Another Axiom" value="Steven">
+
+            <label>Image URL (Optional)</label>
+            <input type="url" id="input-image" placeholder="https://i.imgur.com/...">
+        </div>
+
+        <!-- RIGHT PANEL: OUTPUT -->
+        <div class="panel">
+            <div class="header-flex">
+                <h2>📋 Generated Output</h2>
+            </div>
+
+            <label>Thread Title</label>
+            <input type="text" id="output-title" readonly>
+            <button class="btn" id="btn-copy-title" onclick="copyText('output-title', 'btn-copy-title')">Copy Title</button>
+
+            <label>Post Body Content</label>
+            <textarea id="output-content" class="code-output" readonly></textarea>
+            <button class="btn" id="btn-copy-content" onclick="copyText('output-content', 'btn-copy-content')">Copy Post Content</button>
+        </div>
+    </div>
+
+    <script>
+        const inputs = {
+            type: document.getElementById('input-type'),
+            name: document.getElementById('input-name'),
+            features: document.getElementById('input-features'),
+            download: document.getElementById('input-download'),
+            virustotal: document.getElementById('input-virustotal'),
+            credits: document.getElementById('input-credits'),
+            image: document.getElementById('input-image')
+        };
+
+        const outputs = {
+            title: document.getElementById('output-title'),
+            content: document.getElementById('output-content')
+        };
+
+        function generatePost() {
+            const prefix = inputs.type.value;
+            const name = inputs.name.value.trim() || 'Resource Name';
+            const rawFeatures = inputs.features.value;
+            const download = inputs.download.value.trim() || 'No link provided';
+            const virustotal = inputs.virustotal.value.trim();
+            const credits = inputs.credits.value.trim();
+            const image = inputs.image.value.trim();
+
+            let formattedFeatures = '> • No features listed';
+            if (rawFeatures.trim()) {
+                formattedFeatures = rawFeatures
+                    .split('\n')
+                    .map(line => line.trim())
+                    .filter(line => line.length > 0)
+                    .map(line => `> • ${line.replace(/^[-*•\s]+/, '')}`)
+                    .join('\n');
+            }
+
+            outputs.title.value = `${prefix}${name}`;
+
+            const postLines = [
+                `> ─────────────`,
+                `> 📌 **${name}**`,
+                `> `,
+                `> 📝 **Contents / Features:**`,
+                formattedFeatures,
+                `> `,
+                `> 📥 **Download:** ${download}`
+            ];
+
+            if (virustotal) {
+                postLines.push(`> 🛡️ **VirusTotal:** ${virustotal}`);
+            }
+
+            if (credits) {
+                postLines.push(`> 👤 **Credits:** ${credits}`);
+            }
+
+            postLines.push(`> ─────────────`, `> _Please give credit if you use this in your project!_`);
+
+            let finalContent = postLines.join('\n');
+
+            if (image) {
+                finalContent += `\n\n${image}`;
+            }
+
+            outputs.content.value = finalContent;
+        }
+
+        function copyText(elementId, buttonId) {
+            const element = document.getElementById(elementId);
+            const button = document.getElementById(buttonId);
+            const originalText = button.innerText;
+
+            element.select();
+            element.setSelectionRange(0, 99999);
+
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(element.value).then(showSuccess);
+            } else {
+                try {
+                    document.execCommand('copy');
+                    showSuccess();
+                } catch (err) {
+                    alert('Copy failed! Please copy manually.');
+                }
+            }
+
+            function showSuccess() {
+                button.innerText = '✅ Copied!';
+                button.classList.add('copied');
+                window.getSelection().removeAllRanges();
+                
+                setTimeout(() => {
+                    button.innerText = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+            }
+        }
+
+        function clearForm() {
+            inputs.name.value = '';
+            inputs.features.value = '';
+            inputs.download.value = '';
+            inputs.virustotal.value = '';
+            inputs.credits.value = '';
+            inputs.image.value = '';
+            generatePost();
+            inputs.name.focus();
+        }
+
+        Object.values(inputs).forEach(input => {
+            input.addEventListener('input', generatePost);
+            input.addEventListener('change', generatePost);
+        });
+
+        generatePost();
+    </script>
+</body>
+</html>
